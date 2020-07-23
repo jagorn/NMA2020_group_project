@@ -2,10 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# STEP 1: FIND THE FILES OF INTEREST ..........................................
+""" STEP 1: FIND THE FILES OF INTEREST """
+
 # Path to the extracted data of interest
 mouse = ("/home/michalis/Data/NMA material/Steinmetz dataset/9598406/"
-	    "spikeAndBehavioralData/allData/Cori_2016-12-14")
+ 	    "spikeAndBehavioralData/allData/Cori_2016-12-14")
 
 # Info about channels <-> brain areas
 f_areas = "channels.brainLocation.tsv"
@@ -22,7 +23,8 @@ f_clusters = "spikes.clusters.npy"
 f_times = "spikes.times.npy"
 
 
-# STEP 2: LOAD FILES, CLEAN UNECESSARY INFORMATION, ORGANIZE DATA .............
+"""STEP 2: LOAD FILES, CLEAN UNECESSARY INFORMATION, ORGANIZE DATA """
+
 # A list where index -> channel,  value -> brain area
 areas_from_channels = [line.split('\t')[-1] for line in lines[1:]]
 # 1D numpy array where index -> neuron, value -> channel where it is recorded from
@@ -37,7 +39,8 @@ times = np.load(f"{mouse}/{f_times}")
 spiketimes = np.hstack((clusters, times))
 
 
-# STEP 3: CREATE SOME USEFUL FUNCTIONS .......................................
+""" STEP 3: CREATE SOME USEFUL FUNCTIONS """
+
 def sort_and_clean():
     """
     Returns a dict where keys -> brain areas and values -> list of neurons.
@@ -61,16 +64,32 @@ def sort_and_clean():
     return d
 
 
-# STEP 4: RUN ANALYSIS ........................................................
-# Create a dicionary where keys -> brain areas and values -> list of neurons
-sorted_areas = sort_and_clean()
-# Choose area of interest
-ca3 = sorted_areas['CA3']
-# Create an mask to keep only rows of interest
-ca3_filter = np.isin(spiketimes[:,0], ca3)
-# Fetch only desired spiketimes
-ca3_spiketimes = spiketimes[ca3_filter]
+def area_spikes(area):
+    """
+    Parameters
+    ----------
+    area : str
 
+    Returns
+    -------
+    None.
+
+    """
+    # Set global vars that can be accessed outside of function for debuging
+    global sorted_areas, choose_area, mask
+    # Create a dicionary where keys -> brain areas and values -> list of neurons
+    sorted_areas = sort_and_clean()
+    # Choose area of interest
+    chosen_area = sorted_areas[area]
+    # Create a mask to keep only rows of interest
+    mask = np.isin(spiketimes[:,0], chosen_area)
+    # Fetch only desired spiketimes
+    return spiketimes[mask]
+
+    
+""" STEP 4: RUN ANALYSIS """
+
+ca3 = area_spikes('CA3')
 # Visualise spikes
-plt.plot(ca3_spiketimes[:, 1], ca3_spiketimes[:, 0],  'o', ms=0.5)
+plt.plot(ca3[:, 1], ca3[:, 0],  'o', ms=0.5)
 plt.show()
