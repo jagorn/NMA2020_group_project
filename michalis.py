@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from numba import jit
 
 
 # STEP 1: FIND THE FILES OF INTEREST ..........................................
@@ -23,7 +22,7 @@ f_clusters = "spikes.clusters.npy"
 f_times = "spikes.times.npy"
 
 
-# STEP 2: LOAD FILES AND CLEAN UNECESSARY INFORMATION .........................
+# STEP 2: LOAD FILES, CLEAN UNECESSARY INFORMATION, ORGANIZE DATA .............
 # A list where index -> channel,  value -> brain area
 areas_from_channels = [line.split('\t')[-1] for line in lines[1:]]
 # 1D numpy array where index -> neuron, value -> channel where it is recorded from
@@ -34,6 +33,8 @@ quality = np.load(f"{mouse}/{f_quality}") # index -> cluster (neuron)
 clusters = np.load(f"{mouse}/{f_clusters}")
 # 1D numpy array where index -> spike event and value -> spike time
 times = np.load(f"{mouse}/{f_times}")
+# 2d numpy array containing all spiketimes
+spiketimes = np.hstack((clusters, times))
 
 
 # STEP 3: CREATE SOME USEFUL FUNCTIONS .......................................
@@ -60,18 +61,15 @@ def sort_and_clean():
     return d
 
 
-# STEP 3: RUN ANALYSIS ........................................................
+# STEP 4: RUN ANALYSIS ........................................................
 # Create a dicionary where keys -> brain areas and values -> list of neurons
 sorted_areas = sort_and_clean()
 # Choose area of interest
 ca3 = sorted_areas['CA3']
-# Merge spiketimes into a single 2d array
-all_spiketimes = np.hstack((clusters, times))
 # Create an mask to keep only rows of interest
-ca3_filter = np.isin(all_spiketimes[:,0], ca3)
+ca3_filter = np.isin(spiketimes[:,0], ca3)
 # Fetch only desired spiketimes
-ca3_spiketimes = all_spiketimes[ca3_filter]
-
+ca3_spiketimes = spiketimes[ca3_filter]
 
 # Visualise spikes
 plt.plot(ca3_spiketimes[:, 1], ca3_spiketimes[:, 0],  'o', ms=0.5)
