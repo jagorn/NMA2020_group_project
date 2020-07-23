@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # STEP 1: FIND THE FILES OF INTEREST ..........................................
-
 # Path to the extracted data of interest:
 mouse = ("/home/michalis/Data/NMA material/Steinmetz dataset/9598406/"
 	    "spikeAndBehavioralData/allData/Cori_2016-12-14")
@@ -21,28 +20,48 @@ f_clusters = "spikes.clusters.npy"
 # Time of spike:
 f_times = "spikes.times.npy"
 
-# STEP 2: LOAD FILES AND CLEAN UNECESSARY DATA ................................
 
-# A list where index = channel,  value = brain area
+# STEP 2: LOAD FILES AND CLEAN UNECESSARY INFORMATION .........................
+# A list where index -> channel,  value -> brain area
 areas_from_channels = [line.split('\t')[-1] for line in lines[1:]]
-# 1D numpy array where index = neuron, value = channel where it is recorded from
+# 1D numpy array where index -> neuron, value -> channel where it is recorded from
 channels = np.load(f"{mouse}/{f_channels}")
-# 1D numpy array where index = neuron and value = recording quality score (good >= 2)
-quality = np.load(f"{mouse}/{f_quality}") # index = cluster (neuron)
-# 1D numpy array where index = spike event and value = neuron index
+# 1D numpy array where index -> neuron and value -> recording quality score (good >= 2)
+quality = np.load(f"{mouse}/{f_quality}") # index -> cluster (neuron)
+# 1D numpy array where index -> spike event and value -> neuron index
 clusters = np.load(f"{mouse}/{f_clusters}")
-# 1D numpy array where index = spike event and value = spike time
+# 1D numpy array where index -> spike event and value -> spike time
 times = np.load(f"{mouse}/{f_times}")
 
 
-def clear_data():
-    """Remove neurons (clusters) with quality score < 2"""
-    pass
 
-def find_area():
-    """Match neurons with their corresponding areas"""
-    pass
+def sort_and_clean():
+    """
+    Returns a dict where keys -> brain areas and values -> list of neurons.
+    Neurons with bad quality scores (less than 2) are exluded.
+    """
+    # Create a list where index -> neuron and value -> area:
+    matched = [areas_from_channels[int(c)] for c in channels]
+    # Find the indices (aka neurons) where they have a score < 2:
+    bad_indices = [i for i, score in enumerate(quality) if score[0] < 2]
+    # Create a dictionary to sort neurons according to areas:
+    d = {}
+    for index, area in enumerate(matched): # Iterate index and value together
+        # Discard bad recordings:
+        if index not in bad_indices:
+            # If the area is already a key then append this neuron index
+            if area in d.keys():
+                d[area].append(index)
+            # Else create a new key for a single element list
+            else:
+                d[area] = [index]
+    return d
 
+
+# STEP 3: RUN ANALYSIS ........................................................
+good_data = sort_and_clean()
+print(good_data.keys())
+print(good_data['CA3'])
 
 
 # Visualise some of the spikes using a rasterplot
