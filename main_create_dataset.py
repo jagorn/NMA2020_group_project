@@ -7,7 +7,7 @@ t0 = 0 # seconds
 tf = 15 # seconds
 minimum_grade = 2
 brain_region = 'LS'
-dataset = generate_spike_counts(recording_name, brain_region, minimum_grade, dt, t0, tf)
+[dataset, time_bins] = generate_spike_counts(recording_name, brain_region, minimum_grade, dt, t0, tf)
 
 
 plt.imshow(dataset)
