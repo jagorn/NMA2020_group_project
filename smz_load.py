@@ -10,15 +10,46 @@ f_quality = "clusters._phy_annotation.npy"
 f_channels = "clusters.peakChannel.npy"
 # Active neurons indices:
 f_clusters = "spikes.clusters.npy"
-# Time of spike:
-f_times = "spikes.times.npy"
 # Info about channels <-> brain areas:
 f_areas = "channels.brainLocation.tsv"
+
+# Time of spike:
+f_times = "spikes.times.npy"
+# Times of visual stimulations for each trial
+f_visual = "trials.visualStim_times.npy"
+# Times of auditory cue for each trial
+f_cue = "trials.goCue_times.npy"
+
+
+
+# Info about the trial time intervals:
+f_trials = "trials.intervals.npy"
+# Info about the trials used:
+f_trials_idx = "trials.included.npy"
+
 # Location of the project
 project_path = pathlib.Path().absolute()
 
 
 """ LOADING FUNCTIONS """
+
+
+def load_visual_stim_times(recording_name):
+    # Returns a vector of length n_trials. Each value tells the time at which the stimulus was played for a given trial
+    data_path = os.path.join(project_path, 'data', recording_name)
+    visual_times_file = os.path.join(data_path, f_visual)
+    visual_times = np.load(visual_times_file)
+    visual_times = visual_times.reshape(len(visual_times))
+    return visual_times
+
+
+def load_cue_times(recording_name):
+    # Returns a vector of length n_trials. Each value tells the time at which the cue was played for a given trial
+    data_path = os.path.join(project_path, 'data', recording_name)
+    cue_times = os.path.join(data_path, f_cue)
+    cue_times = np.load(cue_times)
+    cue_times = cue_times.reshape(len(cue_times))
+    return cue_times
 
 
 def load_neuron_regions(recording_name):
@@ -52,6 +83,22 @@ def load_neuron_grades(recording_name):
     return neuron_2_grades
 
 
+def load_trial_intervals(recording_name, idx=None):
+    # Returns a vector of length n_neurons. Each value tells the grade (1=bad, 2=decent, 3=good) of the given neuron
+    data_path = os.path.join(project_path, 'data', recording_name)
+    trials_file = os.path.join(data_path, f_trials)
+    trials_indices_file = os.path.join(data_path, f_trials_idx)
+
+    trials = np.load(trials_file)
+    trials_indices = np.load(trials_indices_file)
+    selected_trials = clean_trials(trials, trials_indices)
+
+    if idx is not None:
+        selected_trials = selected_trials[idx]
+
+    return selected_trials
+
+
 def load_spike_times(recording_name):
     # Returns a vector of length n_spikes. Each value tells the time at which the spike was recorded (in seconds)
     data_path = os.path.join(project_path, 'data', recording_name)
@@ -72,6 +119,16 @@ def load_spikes_2_neurons(recording_name):
 
 
 """ DATA-SET FUNCTIONS """
+
+
+def clean_trials(trial_intervals, included_trials):
+    #   Remove trials that were not included
+    #   INPUT: trial_intervals  - onset and offset timestamps of a N trials
+    #          included_trials - boolean +1 included, 0 not included
+    #
+    idx = np.where(included_trials == 1)
+    idx = idx[0]
+    return trial_intervals[idx, :]
 
 
 def select_neurons_by_region(recording_name, region):
