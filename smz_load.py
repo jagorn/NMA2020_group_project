@@ -21,7 +21,6 @@ f_visual = "trials.visualStim_times.npy"
 f_cue = "trials.goCue_times.npy"
 
 
-
 # Info about the trial time intervals:
 f_trials = "trials.intervals.npy"
 # Info about the trials used:
