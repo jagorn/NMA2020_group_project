@@ -179,7 +179,7 @@ def generate_spike_counts(recording_name, brain_region, minimum_grade, dt, t0, t
         # generate an histogram of spike counts
         [neuron_spike_counts, _] = np.histogram(neuron_spikes, time_steps)
         if firing_rates:
-            neuron_spike_counts /= dt
+            neuron_spike_counts = neuron_spike_counts / dt
         spike_counts[i, :] = neuron_spike_counts
 
     return spike_counts, time_bins

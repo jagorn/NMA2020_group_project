@@ -1,36 +1,58 @@
 from smz_load import *
 from smz_plot import *
+from get_clean_trials import *
+from matplotlib import pyplot as plt
+from hmm_map_states import *
 from hmmlearn import hmm
 
-# Data Parameters
+# Experimental Parameters
 recording_name = 'Cori_2016-12-14'
 brain_region = 'ACA'
-dt = 0.02  # seconds
-minimum_grade = 2
+neuron_min_score = 2
 
-# Model parameters
-n_compoments = 3
+# Model Parameters
+bin_dt = 0.05  # seconds
+pre_stim_dt = 0.5 # seconds
+post_resp_dt = 0.5 # seconds
+n_compoments = 5
 colors = ['r', 'g', 'b', 'y', 'm', 'c']
 
-plt.figure()
-n_trials = 3
-for trial in range(n_trials):
-    fig = plt.subplot(1, n_trials, trial+1)
+# Choose trials
+trials = extract_clean_trials(recording_name)
+conditioned_trials = np.where(trials['choice'] == 0)[0]
 
-    visual_time = load_visual_stim_times(recording_name)[trial]
-    cue_time = load_cue_times(recording_name)[trial]
-    trial_interval = load_trial_intervals(recording_name, trial)
-    [dataset, time_bins] = generate_spike_counts(recording_name, brain_region, minimum_grade, dt, trial_interval[0], trial_interval[1])
+# Run the fit
+plt.figure()
+n_trials = 5
+for i in range(n_trials):
+    fig = plt.subplot(1, n_trials, i + 1)
+
+    # Load time pointers for the given trial
+    trial = conditioned_trials[i]
+    visual_time = trials['visStim_times'][trial]
+    cue_time = trials['cue_times'][trial]
+    feedback_time = trials['feedback_times'][trial]
+
+    # generate the spike count histograms
+    t0 = visual_time - pre_stim_dt
+    tf = feedback_time + post_resp_dt
+    [dataset, time_bins] = generate_spike_counts(recording_name, brain_region, neuron_min_score, bin_dt, t0, tf)
     (n_neurons, n_bins) = dataset.shape
 
     # Create a hmm model
-    # dataset = (dataset > 0).astype(int)  # Conversion to binary for multinomial HMM
     model = hmm.GaussianHMM(n_components=n_compoments, n_iter=1000)
     model.fit(dataset.T)
     [logprob, states] = model.decode(dataset.T)
 
+    # Find the best mapping of the state sequences
+    if i == 0:
+        states_trial0 = states
+    else:
+        states = map_states(n_compoments, states_trial0, states)
+
+    # Plot
     title = brain_region + ' trial#' + str(trial)
-    plot_psths(dataset, time_bins, title, visual_time, cue_time)
+    plot_psths(dataset, time_bins, title, visual_time, cue_time, feedback_time)
     add_states_2_psth(fig, states, colors, n_neurons)
 
 plt.show()
