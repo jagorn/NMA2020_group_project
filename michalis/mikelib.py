@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from hmmlearn import hmm
 
 
 """ STEP 1: FIND THE FILES OF INTEREST """
@@ -8,10 +9,10 @@ import numpy as np
 mouse = ("/home/michalis/Data/NMA material/Steinmetz dataset/9598406/"
  	    "spikeAndBehavioralData/allData/Cori_2016-12-14")
 
-# Info about channels <-> brain areas
+# Info about channels <--> brain areas
 f_areas = "channels.brainLocation.tsv"
 with open(f"{mouse}/{f_areas}") as file: # open file as a single string
-    lines = file.read().splitlines() # split new lines (string -> list of strings)
+    lines = file.read().splitlines() # split new lines (string --> list of strings)
 
 # Quality of recordings for a given active neuron
 f_quality = "clusters._phy_annotation.npy"
@@ -25,15 +26,15 @@ f_times = "spikes.times.npy"
 
 """STEP 2: LOAD FILES, CLEAN UNECESSARY INFORMATION, ORGANIZE DATA """
 
-# A list where index -> channel,  value -> brain area
+# A list where index --> channel,  value --> brain area
 areas_from_channels = [line.split('\t')[-1] for line in lines[1:]]
-# 1D numpy array where index -> neuron, value -> channel where it is recorded from
+# 1D numpy array where index --> neuron, value --> channel where it is recorded from
 channels = np.load(f"{mouse}/{f_channels}")
-# 1D numpy array where index -> neuron and value -> recording quality score (good >= 2)
-quality = np.load(f"{mouse}/{f_quality}") # index -> cluster (neuron)
-# 1D numpy array where index -> spike event and value -> neuron index
+# 1D numpy array where index --> neuron and value --> recording quality score (good >= 2)
+quality = np.load(f"{mouse}/{f_quality}") # index --> cluster (neuron)
+# 1D numpy array where index --> spike event and value --> neuron index
 clusters = np.load(f"{mouse}/{f_clusters}")
-# 1D numpy array where index -> spike event and value -> spike time
+# 1D numpy array where index --> spike event and value --> spike time
 times = np.load(f"{mouse}/{f_times}")
 # 2d numpy array containing all spiketimes
 spiketimes = np.hstack((clusters, times))
@@ -43,10 +44,10 @@ spiketimes = np.hstack((clusters, times))
 
 def sort_and_clean():
     """
-    Returns a dict where keys -> brain areas and values -> list of neurons.
+    Returns a dict where keys --> brain areas and values --> list of neurons.
     Neurons with bad quality scores (less than 2) are exluded.
     """
-    # Create a list where index -> neuron and value -> area
+    # Create a list where index --> neuron and value --> area
     matched = [areas_from_channels[int(c)] for c in channels]
     # Find the indices (aka neurons) where they have a score < 2
     bad_indices = [i for i, score in enumerate(quality) if score[0] < 2]
@@ -64,20 +65,22 @@ def sort_and_clean():
     return d
 
 
-def area_spikes(area):
+def get_spikes(area):
     """
+    Returns the spiketimes of single brain area
+    
     Parameters
     ----------
-    area : str
+    area: str
 
     Returns
     -------
-    None.
+    spiketimes:  2d np array where 1st column --> neuron id and 2nd column --> time of spike
 
     """
     # Set global vars that can be accessed outside of function for debuging
     global sorted_areas, choose_area, mask
-    # Create a dicionary where keys -> brain areas and values -> list of neurons
+    # Create a dicionary where keys --> brain areas and values --> list of neurons
     sorted_areas = sort_and_clean()
     # Choose area of interest
     chosen_area = sorted_areas[area]
@@ -89,7 +92,14 @@ def area_spikes(area):
     
 """ STEP 4: RUN ANALYSIS """
 
-ca3 = area_spikes('CA3')
+sorted_areas = sort_and_clean()
+test = get_spikes('CA3')
 # Visualise spikes
-plt.plot(ca3[:, 1], ca3[:, 0],  'o', ms=0.5)
-plt.show()
+# plt.plot(ca3[:, 1], ca3[:, 0],  'o', ms=0.5)
+# plt.show()
+
+
+# x = np.arange(10).reshape(5, 2)
+# y = x[np.where(x[:,1]>=5)]
+
+# print(y)
