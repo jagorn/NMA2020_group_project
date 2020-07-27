@@ -3,7 +3,7 @@ import matplotlib.patches as patches
 import numpy as np
 
 
-def plot_psths(dataset, time_bins, title, visual_time, cue_time):
+def plot_psths(dataset, time_bins, title, visual_time, cue_time, feedback_time):
     plt.imshow(dataset, cmap='binary', aspect='auto')
     plt.title(title)
     plt.ylabel('neurons')
@@ -19,7 +19,10 @@ def plot_psths(dataset, time_bins, title, visual_time, cue_time):
     cue_time_bin = np.where(cue_time < time_bins)[0][0]
     plt.axvline(cue_time_bin, color='g')
 
-    plt.legend(['visual', 'cue'])
+    feedback_time_bin = np.where(feedback_time < time_bins)[0][0]
+    plt.axvline(feedback_time_bin, color='k')
+
+    plt.legend(['visual', 'cue', 'feedback'])
 
 
 def add_states_2_psth(fig, states, colors, n_neurons):
