@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from hmmlearn import hmm
+import seaborn as sns
 
 
 """ STEP 1: FIND THE FILES OF INTEREST """
@@ -42,7 +42,7 @@ spiketimes = np.hstack((clusters, times))
 
 """ STEP 3: CREATE SOME USEFUL FUNCTIONS """
 
-def sort_and_clean():
+def sort_by_area():
     """
     Returns a dict where keys --> brain areas and values --> list of neurons.
     Neurons with bad quality scores (less than 2) are exluded.
@@ -65,7 +65,7 @@ def sort_and_clean():
     return d
 
 
-def get_spikes(area):
+def get_area(area):
     """
     Returns the spiketimes of single brain area
     
@@ -75,31 +75,57 @@ def get_spikes(area):
 
     Returns
     -------
-    spiketimes:  2d np array where 1st column --> neuron id and 2nd column --> time of spike
-
+    area_spikes: 2d np array where 1st column --> area-specific neuron IDs and
+                 2nd column --> spike times
     """
     # Set global vars that can be accessed outside of function for debuging
     global sorted_areas, choose_area, mask
     # Create a dicionary where keys --> brain areas and values --> list of neurons
-    sorted_areas = sort_and_clean()
+    sorted_areas = sort_by_area()
     # Choose area of interest
     chosen_area = sorted_areas[area]
     # Create a mask to keep only rows of interest
     mask = np.isin(spiketimes[:,0], chosen_area)
     # Fetch only desired spiketimes
-    return spiketimes[mask]
+    area_spikes = spiketimes[mask]
+    return area_spikes
 
+
+def get_spikes(t1, t2, spiketimes):
+    """
+    Reurns the spiketimes between two time points
+
+    Parameters
+    ----------
+    t1 : float
+        first time point in seconds
+    t2 : float
+        second time point in seconds
+    spikes: 2d np array
+        an array of spiketimes
+
+    Returns
+    -------
+    timed_spikes: 2d np array of spiketimes between t1 and t2
+
+    """
+    indices = np.where((spiketimes[:,1] > t1) & (spiketimes[:,1] < t2))
+    timed_spikes = spiketimes[indices]
+    return timed_spikes
     
+
+def bin_spikes(t1, t2, spiketimes, binsize):
+    spikes = get_spikes(t1, t2, spiketimes)
+    bin_length = (t2-t1) * 
+
 """ STEP 4: RUN ANALYSIS """
 
-sorted_areas = sort_and_clean()
-test = get_spikes('CA3')
+sorted_areas = sort_by_area()
+ca3 = get_area('CA3')
+ca3_trial = get_spikes(0, 3, ca3)
+
 # Visualise spikes
-# plt.plot(ca3[:, 1], ca3[:, 0],  'o', ms=0.5)
-# plt.show()
+sns.set()
+plt.plot(ca3_trial[:, 1], ca3_trial[:, 0],  'o', ms=0.5)
+plt.show()
 
-
-# x = np.arange(10).reshape(5, 2)
-# y = x[np.where(x[:,1]>=5)]
-
-# print(y)
