@@ -3,7 +3,9 @@ from smz_plot import *
 from get_clean_trials import *
 from matplotlib import pyplot as plt
 from hmm_map_states import *
-from hmmlearn import hmm
+import ssm
+import matplotlib.cm as cm
+
 
 # Experimental Parameters
 recording_name = 'Cori_2016-12-14'
@@ -11,10 +13,10 @@ brain_region = 'MOs'
 neuron_min_score = 2
 
 # Model Parameters
-bin_dt = 0.05  # seconds
+bin_dt = 0.002  # seconds
 pre_stim_dt = 0.5 # seconds
 post_resp_dt = 0.5 # seconds
-n_compoments = 3
+n_compoments = 5
 colors = ['r', 'g', 'b', 'y', 'm', 'c']
 
 # Choose trials
@@ -22,10 +24,8 @@ trials = extract_clean_trials(recording_name)
 conditioned_trials = np.where(trials['choice'] == 0)[0]
 
 # Run the fit
-plt.figure()
 n_trials = 5
-for i in range(n_trials):
-    fig = plt.subplot(1, n_trials, i + 1)
+for i in range(n_trials, n_trials+1):
 
     # Load time pointers for the given trial
     trial = conditioned_trials[i]
@@ -40,19 +40,29 @@ for i in range(n_trials):
     (n_neurons, n_bins) = dataset.shape
 
     # Create a hmm model
-    model = hmm.GaussianHMM(n_components=n_compoments, n_iter=1000)
-    model.fit(dataset.T)
-    [logprob, states] = model.decode(dataset.T)
+    dataset = (dataset > 0).astype(int)
+    model = ssm.HMM(n_compoments, 2, observations="bernoulli")
+    hmm_lls = model.fit(dataset.T, method="em", num_iters=200)
+    states = model.most_likely_states(dataset.T)
+    ninja = model.filter(dataset.T)
 
-    # Find the best mapping of the state sequences
-    if i == 0:
-        states_trial0 = states
-    else:
-        states = map_states(n_compoments, states_trial0, states)
+time = range(len(ninja[:, 0]))
 
-    # Plot
-    title = brain_region + ' trial#' + str(trial)
-    plot_psths(dataset, time_bins, title, visual_time, cue_time, feedback_time)
-    add_states_2_psth(fig, states, colors, n_neurons)
-
+plt.plot(time, ninja[:, 0])
+plt.plot(time, ninja[:, 1])
+plt.plot(time, ninja[:, 2])
+plt.plot(time, ninja[:, 3])
+plt.plot(time, ninja[:, 4])
 plt.show()
+
+# plt.imshow(states[None,:], aspect="auto", cmap=cm.RdYlGn, vmin=0, vmax=len(colors)-1)
+# # plt.xlim(0, time_bins)
+# # plt.ylabel("$z_{\\mathrm{inferred}}$")
+# plt.yticks([])
+# plt.xlabel("time")
+# # plt.plot(hmm_lls, label="EM")
+# # # plt.plot([0, 1000], true_ll * np.ones(2), ':k', label="True")
+# # plt.xlabel("EM Iteration")
+# # plt.ylabel("Log Probability")
+# # plt.legend(loc="lower right")
+# plt.show()

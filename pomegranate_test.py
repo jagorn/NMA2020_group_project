@@ -28,7 +28,7 @@ for trial in range(n_trials):
     model = HiddenMarkovModel.from_samples(BernoulliDistribution, n_components=compoments, X=[dataset.T])
     # [logprob, states] = model.viterbi(dataset)
 
-    
+
     
     
 #     model.fit(dataset.T)
