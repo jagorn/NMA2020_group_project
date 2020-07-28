@@ -7,24 +7,28 @@ import ssm
 import matplotlib.cm as cm
 
 
+# np.random.seed(0)
+
+
 # Experimental Parameters
 recording_name = 'Cori_2016-12-14'
 brain_region = 'MOs'
 neuron_min_score = 2
 
 # Model Parameters
-bin_dt = 0.002  # seconds
+bin_dt = 0.01  # seconds
 pre_stim_dt = 0.5 # seconds
 post_resp_dt = 0.5 # seconds
-n_compoments = 5
-colors = ['r', 'g', 'b', 'y', 'm', 'c']
+N_states = 3
+
 
 # Choose trials
 trials = extract_clean_trials(recording_name)
-conditioned_trials = np.where(trials['choice'] == 0)[0]
+conditioned_trials = np.where(trials['choice'] == 1)[0]
 
+    
 # Run the fit
-n_trials = 5
+n_trials = 1
 for i in range(n_trials, n_trials+1):
 
     # Load time pointers for the given trial
@@ -40,29 +44,20 @@ for i in range(n_trials, n_trials+1):
     (n_neurons, n_bins) = dataset.shape
 
     # Create a hmm model
-    dataset = (dataset > 0).astype(int)
-    model = ssm.HMM(n_compoments, 2, observations="bernoulli")
-    hmm_lls = model.fit(dataset.T, method="em", num_iters=200)
-    states = model.most_likely_states(dataset.T)
-    ninja = model.filter(dataset.T)
+    train_data = (dataset > 0).astype(int).T
+    model = ssm.HMM(N_states, n_neurons, observations="poisson")
+    hmm_lls = model.fit(train_data, method="em", num_iters=1000)
+    posterior = model.filter(train_data)
 
-time = range(len(ninja[:, 0]))
 
-plt.plot(time, ninja[:, 0])
-plt.plot(time, ninja[:, 1])
-plt.plot(time, ninja[:, 2])
-plt.plot(time, ninja[:, 3])
-plt.plot(time, ninja[:, 4])
+plt.figure(n_trials, figsize=[9,5])
+for s in range(N_states):
+    plt.plot(posterior[:, s], label="State %d" % s)
+    
+plt.suptitle('Posterior probability of latent states')
+plt.xlabel(f'time bin ({int(bin_dt*1000)} ms)')
+plt.ylabel('probability')
+
+plt.legend()
 plt.show()
 
-# plt.imshow(states[None,:], aspect="auto", cmap=cm.RdYlGn, vmin=0, vmax=len(colors)-1)
-# # plt.xlim(0, time_bins)
-# # plt.ylabel("$z_{\\mathrm{inferred}}$")
-# plt.yticks([])
-# plt.xlabel("time")
-# # plt.plot(hmm_lls, label="EM")
-# # # plt.plot([0, 1000], true_ll * np.ones(2), ':k', label="True")
-# # plt.xlabel("EM Iteration")
-# # plt.ylabel("Log Probability")
-# # plt.legend(loc="lower right")
-# plt.show()
