@@ -1,46 +1,44 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pathlib
+import os.path
 import seaborn as sns
 
 
-""" STEP 1: FIND THE FILES OF INTEREST """
+def collect_mouse_data(mouse):
+    project_path = pathlib.Path().absolute()
+    data_path = os.path.join(project_path, 'data', mouse).replace('Michalis/', '')
+    
+    # Info about channels <--> brain areas
+    f_areas = "channels.brainLocation.tsv"
+    with open(f"{data_path}/{f_areas}") as file: # open file as a single string
+        lines = file.read().splitlines() # split new lines (string --> list of strings)
+    
+    # Quality of recordings for a given active neuron
+    f_quality = "clusters._phy_annotation.npy"
+    # Which neuron was detected by which channel
+    f_channels = "clusters.peakChannel.npy"
+    # Active neurons indices
+    f_clusters = "spikes.clusters.npy"
+    # Time of spike
+    f_times = "spikes.times.npy"
+    
+    # Make variables accessible to all functions
+    global areas_from_channels, channels, quality, clusters, times, spiketimes
+    
+    # A list where index --> channel,  value --> brain area
+    areas_from_channels = [line.split('\t')[-1] for line in lines[1:]]
+    # 1D numpy array where index --> neuron, value --> channel where it is recorded from
+    channels = np.load(f"{data_path}/{f_channels}")
+    # 1D numpy array where index --> neuron and value --> recording quality score (good >= 2)
+    quality = np.load(f"{data_path}/{f_quality}") # index --> cluster (neuron)
+    # 1D numpy array where index --> spike event and value --> neuron index
+    clusters = np.load(f"{data_path}/{f_clusters}")
+    # 1D numpy array where index --> spike event and value --> spike time
+    times = np.load(f"{data_path}/{f_times}")
+    # 2d numpy array containing all spiketimes
+    spiketimes = np.hstack((clusters, times))
 
-# Path to the extracted data of interest
-mouse = ("/home/michalis/Data/NMA material/Steinmetz dataset/9598406/"
- 	    "spikeAndBehavioralData/allData/Cori_2016-12-14")
-
-# Info about channels <--> brain areas
-f_areas = "channels.brainLocation.tsv"
-with open(f"{mouse}/{f_areas}") as file: # open file as a single string
-    lines = file.read().splitlines() # split new lines (string --> list of strings)
-
-# Quality of recordings for a given active neuron
-f_quality = "clusters._phy_annotation.npy"
-# Which neuron was detected by which channel
-f_channels = "clusters.peakChannel.npy"
-# Active neurons indices
-f_clusters = "spikes.clusters.npy"
-# Time of spike
-f_times = "spikes.times.npy"
-
-
-"""STEP 2: LOAD FILES, CLEAN UNECESSARY INFORMATION, ORGANIZE DATA """
-
-# A list where index --> channel,  value --> brain area
-areas_from_channels = [line.split('\t')[-1] for line in lines[1:]]
-# 1D numpy array where index --> neuron, value --> channel where it is recorded from
-channels = np.load(f"{mouse}/{f_channels}")
-# 1D numpy array where index --> neuron and value --> recording quality score (good >= 2)
-quality = np.load(f"{mouse}/{f_quality}") # index --> cluster (neuron)
-# 1D numpy array where index --> spike event and value --> neuron index
-clusters = np.load(f"{mouse}/{f_clusters}")
-# 1D numpy array where index --> spike event and value --> spike time
-times = np.load(f"{mouse}/{f_times}")
-# 2d numpy array containing all spiketimes
-spiketimes = np.hstack((clusters, times))
-
-
-""" STEP 3: CREATE SOME USEFUL FUNCTIONS """
 
 def sort_by_area():
     """
@@ -138,16 +136,3 @@ def bin_spikes(spiketimes=None, t1=None, t2=None, dt=None):
         spike_counts[i, :] = neuron_spike_counts
         
     return spike_counts
-
-
-""" STEP 4: RUN ANALYSIS """
-
-# sorted_areas = sort_by_area()
-mos = get_area('MOs')
-
-
-# # Visualise spikes
-# sns.set()
-# plt.plot(ca3[:, 1], ca3[:, 0],  'o', ms=0.5)
-# plt.show()
-
