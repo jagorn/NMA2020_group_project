@@ -65,7 +65,7 @@ def sort_by_area():
     return d
 
 
-def get_area(area):
+def get_area(area=None):
     """
     Returns the spiketimes of single brain area
     
@@ -79,7 +79,7 @@ def get_area(area):
                  2nd column --> spike times
     """
     # Set global vars that can be accessed outside of function for debuging
-    global sorted_areas, choose_area, mask
+    global sorted_areas, chosen_area, mask
     # Create a dicionary where keys --> brain areas and values --> list of neurons
     sorted_areas = sort_by_area()
     # Choose area of interest
@@ -88,10 +88,13 @@ def get_area(area):
     mask = np.isin(spiketimes[:,0], chosen_area)
     # Fetch only desired spiketimes
     area_spikes = spiketimes[mask]
+    # Find number of neurons
+    N_neurons = len(chosen_area)
+    
     return area_spikes
 
 
-def get_spikes(t1, t2, spiketimes):
+def get_spikes(spiketimes=None, t1=None, t2=None):
     """
     Reurns the spiketimes between two time points
 
@@ -114,18 +117,37 @@ def get_spikes(t1, t2, spiketimes):
     return timed_spikes
     
 
-def bin_spikes(t1, t2, spiketimes, binsize):
-    spikes = get_spikes(t1, t2, spiketimes)
-    bin_length = (t2-t1) * 
+def bin_spikes(spiketimes=None, t1=None, t2=None, dt=None):
+    neurons_IDs = set(spiketimes[:, 0])
+    n_neurons = len(neurons_IDs)
+
+    time_steps = np.arange(t1, t2+dt, dt)
+    time_bins = time_steps[1:]
+    n_time_bins = len(time_bins)
+
+    spike_counts = np.zeros((n_neurons, n_time_bins))
+    
+    for i, neuron_id in enumerate(neurons_IDs):
+        # for each neuron, retrieve its spikes
+        mask = spiketimes[:, 0] == neuron_id
+        neuron_spikes = spiketimes[mask][:, 1]
+
+
+        # generate an histogram of spike counts
+        neuron_spike_counts, _ = np.histogram(neuron_spikes, time_steps)
+        spike_counts[i, :] = neuron_spike_counts
+        
+    return spike_counts
+
 
 """ STEP 4: RUN ANALYSIS """
 
-sorted_areas = sort_by_area()
-ca3 = get_area('CA3')
-ca3_trial = get_spikes(0, 3, ca3)
+# sorted_areas = sort_by_area()
+mos = get_area('MOs')
 
-# Visualise spikes
-sns.set()
-plt.plot(ca3_trial[:, 1], ca3_trial[:, 0],  'o', ms=0.5)
-plt.show()
+
+# # Visualise spikes
+# sns.set()
+# plt.plot(ca3[:, 1], ca3[:, 0],  'o', ms=0.5)
+# plt.show()
 

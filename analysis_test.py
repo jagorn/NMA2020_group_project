@@ -26,7 +26,7 @@ N_states = 3
 trials = extract_clean_trials(recording_name)
 conditioned_trials = np.where(trials['choice'] == 1)[0]
 
-    
+
 # Run the fit
 n_trials = 1
 for i in range(n_trials, n_trials+1):
@@ -44,11 +44,11 @@ for i in range(n_trials, n_trials+1):
     (n_neurons, n_bins) = dataset.shape
 
     # Create a hmm model
-    train_data = (dataset > 0).astype(int).T
+    train_data = dataset.astype(int).T
     model = ssm.HMM(N_states, n_neurons, observations="poisson")
     hmm_lls = model.fit(train_data, method="em", num_iters=1000)
     posterior = model.filter(train_data)
-
+    # states = model.most_likely_states(train_data)
 
 plt.figure(n_trials, figsize=[9,5])
 for s in range(N_states):
