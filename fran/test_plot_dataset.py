@@ -18,11 +18,11 @@ lengths = np.load("../models/lengths.npy")
 for condition_label in condition_labels:
 
     # get training set trials
-    training_idx = np.load("models/training_idx_" + condition_label + ".npy")
+    training_idx = np.load("../models/training_idx_" + condition_label + ".npy")
     training_dataset, training_lengths = get_conditioned_dataset(dataset, lengths, training_idx)
     training_dataset_reduced, _ = get_conditioned_dataset(dataset_reduced, lengths, training_idx)
 
-    testing_idx = np.load("models/testing_idx_" + condition_label + ".npy")
+    testing_idx = np.load("../models/testing_idx_" + condition_label + ".npy")
     testing_dataset, testing_lengths = get_conditioned_dataset(dataset, lengths, testing_idx)
     testing_dataset_reduced, _ = get_conditioned_dataset(dataset_reduced, lengths, testing_idx)
 
