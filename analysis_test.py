@@ -3,7 +3,12 @@ from smz_plot import *
 from get_clean_trials import *
 from matplotlib import pyplot as plt
 from hmm_map_states import *
-from hmmlearn import hmm
+import ssm
+import matplotlib.cm as cm
+
+
+# np.random.seed(0)
+
 
 # Experimental Parameters
 recording_name = 'Cori_2016-12-14'
@@ -11,21 +16,20 @@ brain_region = 'MOs'
 neuron_min_score = 2
 
 # Model Parameters
-bin_dt = 0.05  # seconds
+bin_dt = 0.01  # seconds
 pre_stim_dt = 0.5 # seconds
 post_resp_dt = 0.5 # seconds
-n_compoments = 3
-colors = ['r', 'g', 'b', 'y', 'm', 'c']
+N_states = 3
+
 
 # Choose trials
 trials = extract_clean_trials(recording_name)
-conditioned_trials = np.where(trials['choice'] == 0)[0]
+conditioned_trials = np.where(trials['choice'] == 1)[0]
+
 
 # Run the fit
-plt.figure()
-n_trials = 5
-for i in range(n_trials):
-    fig = plt.subplot(1, n_trials, i + 1)
+n_trials = 1
+for i in range(n_trials, n_trials+1):
 
     # Load time pointers for the given trial
     trial = conditioned_trials[i]
@@ -40,19 +44,20 @@ for i in range(n_trials):
     (n_neurons, n_bins) = dataset.shape
 
     # Create a hmm model
-    model = hmm.GaussianHMM(n_components=n_compoments, n_iter=1000)
-    model.fit(dataset.T)
-    [logprob, states] = model.decode(dataset.T)
+    train_data = dataset.astype(int).T
+    model = ssm.HMM(N_states, n_neurons, observations="poisson")
+    hmm_lls = model.fit(train_data, method="em", num_iters=1000)
+    posterior = model.filter(train_data)
+    # states = model.most_likely_states(train_data)
 
-    # Find the best mapping of the state sequences
-    if i == 0:
-        states_trial0 = states
-    else:
-        states = map_states(n_compoments, states_trial0, states)
+plt.figure(n_trials, figsize=[9,5])
+for s in range(N_states):
+    plt.plot(posterior[:, s], label="State %d" % s)
+    
+plt.suptitle('Posterior probability of latent states')
+plt.xlabel(f'time bin ({int(bin_dt*1000)} ms)')
+plt.ylabel('probability')
 
-    # Plot
-    title = brain_region + ' trial#' + str(trial)
-    plot_psths(dataset, time_bins, title, visual_time, cue_time, feedback_time)
-    add_states_2_psth(fig, states, colors, n_neurons)
-
+plt.legend()
 plt.show()
+
